@@ -17,6 +17,8 @@
  #include "lib/HttpClient/firmware/HttpClient.h"
  #include "trackertwo.h"
 
+ #include "json.hpp"
+
 
 void setup() {
     t.begin();
@@ -69,12 +71,10 @@ void loop() {
                 Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
                 Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
 
-                String b = "{\"lat\":";
-                b.concat(String(t.readLatDeg()));
-                b.concat(",\"lng\":");
-                b.concat(String(t.readLonDeg()));
-                b.concat("}");
-                request.body = b;
+				nlohmann::json j;
+				createJSON(&j,"lat",t.readLatDeg());
+				createJSON(&j,"lng",t.readLonDeg());
+                request.body = String(j.dump());
                 http.put(request, response, headers);
                 Serial << "Fnc call: http body: " << request.body << endl;
 
@@ -126,12 +126,10 @@ int gpsPublish(String command){
         Particle.publish("G", t.readLatLon(), 60, PRIVATE);
 
         //request.body = "{\"lat\":44,\"lng\":-85}";
-        String b = "{\"lat\":";
-        b.concat(String(t.readLatDeg()));
-        b.concat(",\"lng\":");
-        b.concat(String(t.readLonDeg()));
-        b.concat("}");
-        request.body = b;
+        nlohmann::json j;
+		createJSON(&j,"lat",t.readLatDeg());
+		createJSON(&j,"lng",t.readLonDeg());
+		request.body = String(j.dump());
         http.put(request, response, headers);
         Serial << "Fnc call: http body: " << request.body << endl;
 
@@ -141,4 +139,10 @@ int gpsPublish(String command){
         return 1;
     }
     else { return 0; }
+}
+
+// utility function that creates a JSON entry string based on the pair {key=value} and pushes it to j;
+// (using library https://github.com/nlohmann/json. Needs to include "json.hpp")
+void createJSON( nlohmann::json* j, const char* key, float value ) {
+	(*j)[key] = value;
 }
