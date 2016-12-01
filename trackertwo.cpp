@@ -10,15 +10,21 @@
 * include block and add:  AssetTracker, Steaming, and HTTPClient using the web *
 * IDE
 */
-
 #include "application.h"
- #include "lib/AssetTracker/firmware/AssetTracker.h"
- #include "lib/streaming/firmware/spark-streaming.h"
- #include "lib/HttpClient/firmware/HttpClient.h"
+#include"lib/AssetTracker/firmware/AssetTracker.h"
+#include"lib/streaming/firmware/spark-streaming.h"
+#include "lib/HttpClient/firmware/HttpClient.h"
+#include "lib/SparkJson/firmware/SparkJson.h"
  #include "trackertwo.h"
 
- #include "json.hpp"
-
+/*
+#include "SparkJson/SparkJson.h"
+#include "application.h"
+ #include "AssetTracker/AssetTracker.h"
+ #include "spark-streaming/spark-streaming.h"
+ #include "HttpClient/HttpClient.h"
+ #include "trackertwo.h"
+*/
 
 void setup() {
     t.begin();
@@ -71,10 +77,7 @@ void loop() {
                 Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
                 Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
 
-				nlohmann::json j;
-				createJSON(&j,"lat",t.readLatDeg());
-				createJSON(&j,"lng",t.readLonDeg());
-                request.body = String(j.dump());
+                request.body = generateRequestBody();
                 http.put(request, response, headers);
                 Serial << "Fnc call: http body: " << request.body << endl;
 
@@ -126,10 +129,7 @@ int gpsPublish(String command){
         Particle.publish("G", t.readLatLon(), 60, PRIVATE);
 
         //request.body = "{\"lat\":44,\"lng\":-85}";
-        nlohmann::json j;
-		createJSON(&j,"lat",t.readLatDeg());
-		createJSON(&j,"lng",t.readLonDeg());
-		request.body = String(j.dump());
+        request.body = generateRequestBody();
         http.put(request, response, headers);
         Serial << "Fnc call: http body: " << request.body << endl;
 
@@ -141,8 +141,14 @@ int gpsPublish(String command){
     else { return 0; }
 }
 
-// utility function that creates a JSON entry string based on the pair {key=value} and pushes it to j;
-// (using library https://github.com/nlohmann/json. Needs to include "json.hpp")
-void createJSON( nlohmann::json* j, const char* key, float value ) {
-	(*j)[key] = value;
+String generateRequestBody() {
+    // A Dynamic Json buffer
+    DynamicJsonBuffer jsonBuffer;
+    JsonObject& obj = jsonBuffer.createObject();
+    char buf[500];
+    obj["lat"] = t.readLatDeg();
+    obj["lng"] = t.readLonDeg();
+    obj.printTo(buf, sizeof(buf));
+
+    return String(buf);
 }

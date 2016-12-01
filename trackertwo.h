@@ -1,9 +1,7 @@
 //defines
 #define FILENAME "trackertwo.cpp"
-#define MYVERSION "0.04.0"
-#define MYBUILD "1128.1712"
-
-#include "json.hpp"
+#define MYVERSION "0.04.233733"
+#define MYBUILD "233733"
 
 //declarations
 // Set whether you want the device to publish data to the internet by default here.
@@ -49,7 +47,4 @@ FuelGauge fuel;
 // Prototypes
  int transmitMode(String command);
  int gpsPublish(String command);
-
-// utility function that creates a JSON entry string based on the pair {key=value} and pushes it to j;
-// (using library https://github.com/nlohmann/json. Needs to include "json.hpp")
- void createJSON( nlohmann::json* j, const char* key, float value );
+ String generateRequestBody();
