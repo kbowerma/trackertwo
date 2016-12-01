@@ -1,7 +1,7 @@
 //defines
 #define FILENAME "trackertwo.cpp"
 #define MYVERSION "0.04.233733"
-#define MYBUILD "233733"
+#define MYBUILD "233733BILL"
 
 //declarations
 // Set whether you want the device to publish data to the internet by default here.

@@ -148,6 +148,7 @@ String generateRequestBody() {
     char buf[500];
     obj["lat"] = t.readLatDeg();
     obj["lng"] = t.readLonDeg();
+    obj["deviceId"] = "Bill733";
     obj.printTo(buf, sizeof(buf));
 
     return String(buf);
