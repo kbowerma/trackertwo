@@ -17,14 +17,7 @@
 #include "lib/SparkJson/firmware/SparkJson.h"
  #include "trackertwo.h"
 
-/*
-#include "SparkJson/SparkJson.h"
-#include "application.h"
- #include "AssetTracker/AssetTracker.h"
- #include "spark-streaming/spark-streaming.h"
- #include "HttpClient/HttpClient.h"
- #include "trackertwo.h"
-*/
+
 
 void setup() {
     t.begin();
@@ -57,22 +50,22 @@ void loop() {
       digitalWrite(D7, LOW);
     }
 
-    // if the current time - the last time we published is greater than your set delay...
+   // BELT JOB Phton 2 minutes
+    //if the current time - the last time we published is greater than your set delay...
     if(millis()-lastPublish > delayMinutes*60*1000){
         // Remember when we published
         lastPublish = millis();
-
-
         // Dumps the full NMEA sentence to serial in case you're curious
         Serial << millis()/1000 << "  ";
         Serial.println(t.preNMEA());
-
         // GPS requires a "fix" on the satellites to give good data,
         // so we should only publish data if there's a fix
         if(t.gpsFix()){
             // Only publish if we're in transmittingData mode 1;
             if(transmittingData){
                 // Short publish names save data!
+
+                /*  // Now we are joing going to call GPS publish instead
                 Particle.publish("G", t.readLatLon(), 60, PRIVATE);
                 Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
                 Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
@@ -80,11 +73,13 @@ void loop() {
                 request.body = generateRequestBody();
                 http.put(request, response, headers);
                 Serial << "Fnc call: http body: " << request.body << endl;
+                */
+                gpsPublish("blah");
 
             }
             // but always report the data over serial for local development
-            Serial.print("in the if gpsfix condtion");
-            Serial.println(t.readLatLon());
+            // Serial.print("in the if gpsfix condtion");
+            // Serial.println(t.readLatLon());
             digitalWrite(D7, LOW);   // turn off the led on the fix
         }
     }
@@ -98,16 +93,9 @@ void loop() {
 
     }
 
-   //debug the gps serial
-
+   //debug the gps serial Note: this has to be turned on or it wont update the gps location
    while (Serial1.available() && gpsserialdebug ){
         Serial.print(char(Serial1.read()));
-      //  Serial.print("k");
-        //serial1Avail = 1;
-    // atempt to echo from serial1 to serial
-       //char c = Serial1.read();
-        //Serial.write(c);
-
     }
 
 }
@@ -115,20 +103,21 @@ void loop() {
 
 
 // Allows you to remotely change whether a device is publishing to the cloud
-// or is only reporting data over Serial. Saves data when using only Serial!
-// Change the default at the top of the code.
+  // or is only reporting data over Serial. Saves data when using only Serial!
+  // Change the default at the top of the code.
 int transmitMode(String command){
     transmittingData = atoi(command);
     return 1;
 }
-
 // Actively ask for a GPS reading if you're impatient. Only publishes if there's
-// a GPS fix, otherwise returns '0'
+ // a GPS fix, otherwise returns '0'
 int gpsPublish(String command){
     if(t.gpsFix()){
         Particle.publish("G", t.readLatLon(), 60, PRIVATE);
+        Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
+        Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
 
-        //request.body = "{\"lat\":44,\"lng\":-85}";
+
         request.body = generateRequestBody();
         http.put(request, response, headers);
         Serial << "Fnc call: http body: " << request.body << endl;
@@ -140,16 +129,37 @@ int gpsPublish(String command){
     }
     else { return 0; }
 }
-
+//Function to assembly JSON body payload
 String generateRequestBody() {
-    // A Dynamic Json buffer
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& obj = jsonBuffer.createObject();
-    char buf[500];
-    obj["lat"] = t.readLatDeg();
-    obj["lng"] = t.readLonDeg();
-    obj["deviceId"] = "Bill733";
-    obj.printTo(buf, sizeof(buf));
 
-    return String(buf);
+     // A Dynamic Json buffer
+     DynamicJsonBuffer jsonBuffer;
+     JsonObject& obj = jsonBuffer.createObject();
+     char buf[500];
+     JsonVariant lat;
+     lat.set(t.readLatDeg(), 6);
+     obj["lat"] = lat;
+     JsonVariant lng;
+     lng.set(t.readLonDeg(), 6);
+     obj["lng"] = lng;
+     obj.printTo(buf, sizeof(buf));
+       return String(buf);
+
+ }
+// Convert degree to radians
+float deg2rad(float deg) {
+    return deg * (PI / 180);
+}
+// Get distance between two coordinates in kilometers
+float getDistanceFromLatLong(float lat1, float lon1, float lat2, float lon2) {
+    int R = 6371; // Radius of the earth in km
+    float dLat = deg2rad(lat2 - lat1);
+    float dLon = deg2rad(lon2 - lon1);
+    float a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(deg2rad(lat1)) * cos(deg2rad(lat2)) *
+        sin(dLon/2) * sin(dLon / 2);
+
+    float c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    float d = R * c;
+    return d;
 }

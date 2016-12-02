@@ -45,3 +45,8 @@ Uses the Asset shield.  Not this shield has the LIS3DH 3 axis accelerometer buil
 * [parse nmea messages ](http://freenmea.net/decoder)
 * [Adafruit GPS Library](https://github.com/adafruit/Adafruit_GPS)
 * [Adafruit Resources for Ultimate GPS](https://learn.adafruit.com/adafruit-ultimate-gps)
+
+
+### Contributors
+[kbowerma](https://github.com/kbowerma)
+[billsedison](https://www.topcoder.com/members/billsedison/)
