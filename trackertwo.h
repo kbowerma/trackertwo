@@ -23,7 +23,7 @@ bool gpsserialdebug = true;
 bool mydebug = true;
 int serial1Avail = 0;
 int gpsloctime = 0;
-int DIST_THRESHOLD = 1; // Distance threshold in km for publish gps data
+int DIST_THRESHOLD = 0; // Distance threshold in km for publish gps data
 
 
 http_header_t headers[] = {

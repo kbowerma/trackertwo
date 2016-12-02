@@ -53,33 +53,15 @@ void loop() {
    // BELT JOB Phton 2 minutes
     //if the current time - the last time we published is greater than your set delay...
     if(millis()-lastPublish > delayMinutes*60*1000){
-        // Remember when we published
-        lastPublish = millis();
-        // Dumps the full NMEA sentence to serial in case you're curious
-        Serial << millis()/1000 << "  ";
-        Serial.println(t.preNMEA());
+        lastPublish = millis();  // Remember when we published
+        Serial << millis()/1000 << "  ";  //prints uptime in seconds
+        Serial.println(t.preNMEA()); // Dumps the full NMEA sentence to serial in case you're curious
         // GPS requires a "fix" on the satellites to give good data,
-        // so we should only publish data if there's a fix
-        if(t.gpsFix()){
-            // Only publish if we're in transmittingData mode 1;
+          // so we should only publish data if there's a fix
+        if(t.gpsFix()){ // Only publish if we're in transmittingData mode 1;
             if(transmittingData){
-                // Short publish names save data!
-
-                /*  // Now we are joing going to call GPS publish instead
-                Particle.publish("G", t.readLatLon(), 60, PRIVATE);
-                Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
-                Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
-
-                request.body = generateRequestBody();
-                http.put(request, response, headers);
-                Serial << "Fnc call: http body: " << request.body << endl;
-                */
-                gpsPublish("blah");
-
+                gpsPublish("1");  // call the gpsPublish Function
             }
-            // but always report the data over serial for local development
-            // Serial.print("in the if gpsfix condtion");
-            // Serial.println(t.readLatLon());
             digitalWrite(D7, LOW);   // turn off the led on the fix
         }
     }
@@ -113,10 +95,20 @@ int transmitMode(String command){
  // a GPS fix, otherwise returns '0'
 int gpsPublish(String command){
     if(t.gpsFix()){
+        static float prevLat, prevLon; // Store previous values of latitude and longitude
         Particle.publish("G", t.readLatLon(), 60, PRIVATE);
         Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
         Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
 
+        float currLat = t.readLatDeg();
+        float currLon = t.readLonDeg();
+        float distance = getDistanceFromLatLong(prevLat, prevLon, currLat, currLon);
+        prevLat = currLat;
+        prevLon = currLon;
+        Serial << endl << "DISTANCE SINCE LAST READ   : " << distance << endl;
+        if(distance < DIST_THRESHOLD)  {
+          Serial << "Hey we moved "  << distance << endl;
+        }
 
         request.body = generateRequestBody();
         http.put(request, response, headers);
