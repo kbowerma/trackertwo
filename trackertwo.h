@@ -24,6 +24,13 @@ bool mydebug = true;
 int serial1Avail = 0;
 int gpsloctime = 0;
 int DIST_THRESHOLD = 0; // Distance threshold in km for publish gps data
+float prevLat = 0.000000;
+float prevLon = 0.000000;
+float currLat = 0.000000;
+float currLon = 0.000000;
+float distance = 0.000000;
+int lastDistanceTime = 0;
+float speed = 0;
 
 
 http_header_t headers[] = {
@@ -46,3 +53,4 @@ FuelGauge fuel;
  int gpsPublish(String command);
  String generateRequestBody();
  float getDistanceFromLatLong(float lat1, float lon1, float lat2, float lon2);
+ float checkDistance();

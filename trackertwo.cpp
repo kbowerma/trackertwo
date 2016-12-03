@@ -68,10 +68,14 @@ void loop() {
 
     // debug logger
     if(millis()%5000 == 0 && mydebug ) {
-       Serial << endl << MYBUILD << " 5s Belt " << millis()/1000 << "  GPS FIX TIME: " << gpsloctime  << "  " << t.readLatLon() << endl;
+       Serial << endl << MYBUILD << " " << millis()/1000 << "  GPS FIX TIME: " << gpsloctime  << "  " << t.readLatLon();
+       Serial  << " prevLat: " << String(prevLat) << " prevLon " <<  String(prevLon) << " currLat: " << String(currLat) << " currLon " <<  String(currLon) << " distance ";
+       Serial << String(distance) << " speed " << String(speed) << endl;
+
+       /*
        if(gpsloctime > 0 ) {
          Serial << "Lat: " << String(t.readLatDeg()) << " LON " << String(t.readLonDeg()) << endl;
-       }
+       } */
 
     }
 
@@ -79,11 +83,7 @@ void loop() {
    while (Serial1.available() && gpsserialdebug ){
         Serial.print(char(Serial1.read()));
     }
-
 }
-
-
-
 // Allows you to remotely change whether a device is publishing to the cloud
   // or is only reporting data over Serial. Saves data when using only Serial!
   // Change the default at the top of the code.
@@ -95,25 +95,25 @@ int transmitMode(String command){
  // a GPS fix, otherwise returns '0'
 int gpsPublish(String command){
     if(t.gpsFix()){
-        static float prevLat, prevLon; // Store previous values of latitude and longitude
-        Particle.publish("G", t.readLatLon(), 60, PRIVATE);
-        Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
-        Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
 
-        float currLat = t.readLatDeg();
-        float currLon = t.readLonDeg();
-        float distance = getDistanceFromLatLong(prevLat, prevLon, currLat, currLon);
-        prevLat = currLat;
-        prevLon = currLon;
-        Serial << endl << "DISTANCE SINCE LAST READ   : " << distance << endl;
-        if(distance < DIST_THRESHOLD)  {
-          Serial << "Hey we moved "  << distance << endl;
-        }
+        //static float prevLat, prevLon; // Store previous values of latitude and longitude
+        float mydistance = checkDistance();
 
+
+        Serial << " calling checkDistance() distance: "  << mydistance << endl;
+
+        // WE HAVE MOVEMENT
+        if ( command == "1" || mydistance > DIST_THRESHOLD ) {
         request.body = generateRequestBody();
         http.put(request, response, headers);
         Serial << "Fnc call: http body: " << request.body << endl;
 
+        Particle.publish("G", t.readLatLon(), 60, PRIVATE);
+        Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
+        Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
+        Particle.publish("Dist", String(mydistance), 60, PRIVATE);
+
+        }
 
         // uncomment next line if you want a manual publish to reset delay counter
         // lastPublish = millis();
@@ -154,4 +154,27 @@ float getDistanceFromLatLong(float lat1, float lon1, float lat2, float lon2) {
     float c = 2 * atan2(sqrt(a), sqrt(1 - a));
     float d = R * c;
     return d;
+}
+// checkDistance
+float checkDistance() {
+   distance = 0;
+
+  //static float prevLat, prevLon; // Store previous values of latitude and longitude
+  currLat = t.readLatDeg();
+  currLon = t.readLonDeg();
+  if ( currLat + currLon + prevLat + prevLon  != 0 ) {
+     distance = getDistanceFromLatLong(prevLat, prevLon, currLat, currLon);
+  } else {
+    Serial << " CANT Get Distance yet .... "  << endl;
+  }
+  prevLat = currLat;
+  prevLon = currLon;
+  Serial << endl << "DISTANCE SINCE LAST READ   : " << distance << endl;
+  speed = distance / (millis()/1000 - lastDistanceTime);
+  Serial << "Speed: " <<  speed  << "m/s" << endl;
+  /*if(distance < DIST_THRESHOLD)  {
+    Serial << "Hey we moved "  << distance << endl;
+  }*/
+  lastDistanceTime = millis()/1000;
+  return distance;
 }
