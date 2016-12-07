@@ -71,3 +71,4 @@ FuelGauge fuel;
  String generateRequestBody();
  float getDistanceFromLatLong(float lat1, float lon1, float lat2, float lon2);
  float checkDistance();
+ void myoled();

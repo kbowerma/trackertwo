@@ -46,7 +46,7 @@ void setup() {
 
    display.setTextSize(2);           // from 1-9 sensible actually can be bigger but useless
    display.setTextColor(WHITE, BLACK); // 'normal' text
-   display.setCursor(10,20);       // 128,64 pixels
+   display.setCursor(20,20);       // 128,64 pixels
    display.clearDisplay();
    display.println("SETUP");
    display.display();
@@ -86,29 +86,32 @@ void loop() {
        Serial  << " prevLat: " << String(prevLat) << " prevLon " <<  String(prevLon) << " currLat: " << String(currLat) << " currLon " <<  String(currLon) << " distance ";
        Serial << String(distance) << " speed " << String(speed) << endl;
        Serial << "SSID: " << String(WiFi.SSID()) << endl;
-
-       /*
-       if(gpsloctime > 0 ) {
-         Serial << "Lat: " << String(t.readLatDeg()) << " LON " << String(t.readLonDeg()) << endl;
-       } */
-
-       //display
-       display.setTextSize(1);
-       display.clearDisplay();
-       display.setCursor(0,0);
-      // display.clearDisplay();
-       //display.print("SSID:");
-        //display.setCursor(30,0);
-       display << "SSID: " << (String(WiFi.SSID())) << endl;
-       display << "GPS: "  << gpsloctime << endl << "line 3 "  << endl << "line 4 " << endl << "line 5 " << endl << "line 6 " << endl << "line 7 " << endl << "line 8 ";
-       display.display();
-
+       myoled();
     }
 
    //debug the gps serial Note: this has to be turned on or it wont update the gps location
    while (Serial1.available() && gpsserialdebug ){
         Serial.print(char(Serial1.read()));
     }
+
+}
+
+void myoled() {  // runs the oled functions
+  display.setTextSize(1);
+  display.clearDisplay();
+  display.setCursor(0,0);
+ // display.clearDisplay();
+  //display.print("SSID:");
+   //display.setCursor(30,0);
+  display << "SSID: " << (String(WiFi.SSID())) << endl << endl;
+  display << "GPS: "  << gpsloctime << endl;
+//  if (gpsloctime > 0 ) {
+    display.setCursor(0,25);
+    display << "lat " << endl <<  currLat  << endl;
+    display << "lng " << endl << String(currLon) << endl;
+  //}
+
+  display.display();
 }
 // Allows you to remotely change whether a device is publishing to the cloud
   // or is only reporting data over Serial. Saves data when using only Serial!
