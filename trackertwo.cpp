@@ -52,8 +52,6 @@ void setup() {
    display.display();
    delay(4000);
 }
-
-
 void loop() {
     // You'll need to run this every loop to capture the GPS output
     t.updateGPS();
@@ -96,7 +94,9 @@ void loop() {
 
 }
 
-void myoled() {  // runs the oled functions
+
+// runs the oled functions
+void myoled() {
   display.setTextSize(1);
   display.clearDisplay();
   display.setCursor(0,0);
@@ -105,7 +105,7 @@ void myoled() {  // runs the oled functions
    //display.setCursor(30,0);
   display << "SSID: " << (String(WiFi.SSID())) << endl << endl;
   display << "GPS: "  << gpsloctime << endl;
-//  if (gpsloctime > 0 ) {
+ //  if (gpsloctime > 0 ) {
     display.setCursor(0,25);
     display << "lat " << endl <<  currLat  << endl;
     display << "lng " << endl << String(currLon) << endl;
