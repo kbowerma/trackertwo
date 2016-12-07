@@ -11,10 +11,11 @@
 * IDE
 */
 #include "application.h"
-#include"lib/AssetTracker/firmware/AssetTracker.h"
-#include"lib/streaming/firmware/spark-streaming.h"
-#include "lib/HttpClient/firmware/HttpClient.h"
-#include "lib/SparkJson/firmware/SparkJson.h"
+ #include"lib/AssetTracker/firmware/AssetTracker.h"
+ #include"lib/streaming/firmware/spark-streaming.h"
+ #include "lib/HttpClient/firmware/HttpClient.h"
+ #include "lib/SparkJson/firmware/SparkJson.h"
+ #include "lib/Adafruit_SSD1306/Adafruit_SSD1306.h"
  #include "trackertwo.h"
 
 
@@ -37,6 +38,19 @@ void setup() {
     request.port = 80;
     request.hostname = "kb-dsp-server-dev.herokuapp.com";
     request.path = "/api/v1/drones/583bde88418b863d043d08eb";
+
+    // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
+   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
+
+   display.clearDisplay();   // clears the screen and buffer
+
+   display.setTextSize(2);           // from 1-9 sensible actually can be bigger but useless
+   display.setTextColor(WHITE, BLACK); // 'normal' text
+   display.setCursor(10,20);       // 128,64 pixels
+   display.clearDisplay();
+   display.println("SETUP");
+   display.display();
+   delay(4000);
 }
 
 
@@ -77,6 +91,17 @@ void loop() {
        if(gpsloctime > 0 ) {
          Serial << "Lat: " << String(t.readLatDeg()) << " LON " << String(t.readLonDeg()) << endl;
        } */
+
+       //display
+       display.setTextSize(1);
+       display.clearDisplay();
+       display.setCursor(0,0);
+      // display.clearDisplay();
+       //display.print("SSID:");
+        //display.setCursor(30,0);
+       display << "SSID: " << (String(WiFi.SSID())) << endl;
+       display << "GPS: "  << gpsloctime << endl << "line 3 "  << endl << "line 4 " << endl << "line 5 ";
+       display.display();
 
     }
 
