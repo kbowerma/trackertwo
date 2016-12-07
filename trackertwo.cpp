@@ -100,7 +100,7 @@ void loop() {
        //display.print("SSID:");
         //display.setCursor(30,0);
        display << "SSID: " << (String(WiFi.SSID())) << endl;
-       display << "GPS: "  << gpsloctime << endl << "line 3 "  << endl << "line 4 " << endl << "line 5 ";
+       display << "GPS: "  << gpsloctime << endl << "line 3 "  << endl << "line 4 " << endl << "line 5 " << endl << "line 6 " << endl << "line 7 " << endl << "line 8 ";
        display.display();
 
     }
