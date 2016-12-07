@@ -50,7 +50,7 @@ void loop() {
       digitalWrite(D7, LOW);
     }
 
-   // BELT JOB Phton 2 minutes
+   // 2 minutes - BELT JOB
     //if the current time - the last time we published is greater than your set delay...
     if(millis()-lastPublish > delayMinutes*60*1000){
         lastPublish = millis();  // Remember when we published
@@ -66,11 +66,12 @@ void loop() {
         }
     }
 
-    // debug logger
+    // 5 seconds debug logger
     if(millis()%5000 == 0 && mydebug ) {
        Serial << endl << MYBUILD << " " << millis()/1000 << "  GPS FIX TIME: " << gpsloctime  << "  " << t.readLatLon();
        Serial  << " prevLat: " << String(prevLat) << " prevLon " <<  String(prevLon) << " currLat: " << String(currLat) << " currLon " <<  String(currLon) << " distance ";
        Serial << String(distance) << " speed " << String(speed) << endl;
+       Serial << "SSID: " << String(WiFi.SSID()) << endl;
 
        /*
        if(gpsloctime > 0 ) {
