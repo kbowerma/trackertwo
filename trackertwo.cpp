@@ -30,6 +30,7 @@ void setup() {
     // These three functions are useful for remote diagnostics. Read more below.
     Particle.function("tmode", transmitMode);
     Particle.function("gps", gpsPublish);
+    Particle.function("move", fakeMove);
 
 
     pinMode(D7, OUTPUT);
@@ -56,6 +57,9 @@ void loop() {
     // You'll need to run this every loop to capture the GPS output
     t.updateGPS();
 
+    currLat = t.readLatDeg();
+    currLon = t.readLonDeg();
+
     //FIRST GPS LOC
     if(t.gpsFix() && gpsloctime == 0 ) {
       gpsloctime = millis()/1000;
@@ -79,18 +83,59 @@ void loop() {
     }
 
     // 5 seconds debug logger
-    if(millis()%5000 == 0 && mydebug ) {
-       Serial << endl << MYBUILD << " " << millis()/1000 << "  GPS FIX TIME: " << gpsloctime  << "  " << t.readLatLon();
-       Serial  << " prevLat: " << String(prevLat) << " prevLon " <<  String(prevLon) << " currLat: " << String(currLat) << " currLon " <<  String(currLon) << " distance ";
-       Serial << String(distance) << " speed " << String(speed) << endl;
-       Serial << "SSID: " << String(WiFi.SSID()) << endl;
-       myoled();
+    if(millis()%(delaySeconds*1000) == 0  ) {
+      if(mydebug < 2 ) {
+         Serial << endl << MYBUILD << " " << millis()/1000 << "  GPS FIX TIME: " << gpsloctime  << "  " << t.readLatLon();
+         Serial  << " prevLat: " << String(prevLat) << " prevLon " <<  String(prevLon) << " currLat: " << String(currLat) << " currLon " <<  String(currLon) << " distance ";
+         Serial << String(distance) << " speed " << String(speed) << endl;
+         Serial << "SSID: " << String(WiFi.SSID()) << endl;
+         Serial << "HDOP: " << t.readHDOP() << "gpsTimestamp: " << getGpsTimestamp() << endl;
+      }
+     myoled();
+     if(gpsloctime > 0 ) { // CHECK DISTANCE IF WE HAVE A LOC
+       display << "dist " << checkDistance() << endl;
+       display << MYBUILD << endl;
+      }// only call
+     display.display();
     }
+
+
 
    //debug the gps serial Note: this has to be turned on or it wont update the gps location
    while (Serial1.available() && gpsserialdebug ){
         Serial.print(char(Serial1.read()));
+        int mytime=millis()/1000;
     }
+
+
+  //------------- debug thoughts -------------------- //
+
+
+
+  if (currLat != prevLat  ) {
+    publishCounter = publishCounter+1;  //TODO Move this to actaul published
+    Serial << "precheckdistance A" << String(prevLat) << "  " <<  String(prevLon) << " " << String(currLat) << "  " <<  String(currLon) << "  " << String(distance) << endl;
+    checkDistance();
+    Serial << endl << endl << "THERE IS A CHANGE in LAT,  deltaLon "  <<  currLat - prevLat << " distance: " << distance << endl;
+
+    //delay(6000);
+  }
+
+  if (currLon != prevLon  ) {
+    publishCounter = publishCounter+1;  //TODO Move this to actaul published
+    Serial << "precheckdistance  B" << String(prevLat) << "  " <<  String(prevLon) << " " << String(currLat) << "  " <<  String(currLon) << "  " << String(distance) << endl;
+    checkDistance();
+    Serial << endl << endl << "THERE IS A CHANGE in LON, deltaLon "  <<  currLon - prevLon << " distance: " << distance << endl;
+    //delay(6000);
+  }
+
+  //------------- end debug thoughts -------------------- //
+
+    //lastly set old to current as long as you get areading
+    //if(currLat > 0 )
+    prevLat = currLat;
+    //if(currLon > 0 )
+    prevLon = currLon;
 
 }
 
@@ -103,13 +148,17 @@ void myoled() {
  // display.clearDisplay();
   //display.print("SSID:");
    //display.setCursor(30,0);
-  display << "SSID: " << (String(WiFi.SSID())) << endl << endl;
-  display << "GPS: "  << gpsloctime << endl;
- //  if (gpsloctime > 0 ) {
-    display.setCursor(0,25);
-    display << "lat " << endl <<  currLat  << endl;
-    display << "lng " << endl << String(currLon) << endl;
-  //}
+  display << gpsloctime <<"  "  << (String(WiFi.SSID()))  << " " << t.readHDOP() << endl;
+    int seconds =  ( millis()/1000 ) % 60;
+    int minutes = ( millis()/(1000 * 60) ) % 60;
+    int hours  = ( millis()/(1000 * 60 * 60) ) % 24;
+   display << hours << ":" << minutes<< ":" << seconds << " pud " << publishCounter << endl ;
+  // display << "GPS: "  << gpsloctime << endl;
+   if (gpsloctime > 0 ) {
+    //display.setCursor(0,25);
+    display  <<  String(currLat)  << endl;
+    display  << String(currLon) << endl;
+  }
 
   display.display();
 }
@@ -126,13 +175,13 @@ int gpsPublish(String command){
     if(t.gpsFix()){
 
         //static float prevLat, prevLon; // Store previous values of latitude and longitude
-        float mydistance = checkDistance();
+        //float mydistance = checkDistance();
 
 
-        Serial << " calling checkDistance() distance: "  << mydistance << endl;
+        // Serial << " calling checkDistance() distance: "  << mydistance << endl;
 
         // WE HAVE MOVEMENT
-        if ( command == "1" || mydistance > DIST_THRESHOLD ) {
+        if ( command == "1"  ) {
         request.body = generateRequestBody();
         http.put(request, response, headers);
         Serial << "Fnc call: http body: " << request.body << endl;
@@ -140,7 +189,7 @@ int gpsPublish(String command){
         Particle.publish("G", t.readLatLon(), 60, PRIVATE);
         Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
         Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
-        Particle.publish("Dist", String(mydistance), 60, PRIVATE);
+        //Particle.publish("Dist", String(mydistance), 60, PRIVATE);
 
         }
 
@@ -151,6 +200,12 @@ int gpsPublish(String command){
     else { return 0; }
 }
 //Function to assembly JSON body payload
+int fakeMove(String command){
+  int n = atof(command);
+  prevLon = prevLon + n;
+  return 1;
+
+}
 String generateRequestBody() {
 
      // A Dynamic Json buffer
@@ -186,24 +241,22 @@ float getDistanceFromLatLong(float lat1, float lon1, float lat2, float lon2) {
 }
 // checkDistance
 float checkDistance() {
-   distance = 0;
 
-  //static float prevLat, prevLon; // Store previous values of latitude and longitude
-  currLat = t.readLatDeg();
-  currLon = t.readLonDeg();
-  if ( currLat + currLon + prevLat + prevLon  != 0 ) {
-     distance = getDistanceFromLatLong(prevLat, prevLon, currLat, currLon);
-  } else {
-    Serial << " CANT Get Distance yet .... "  << endl;
+
+  if(prevLat > 0 ) {
+    // only check the distance is we have previous distance
+    distance = getDistanceFromLatLong(prevLat, prevLon, currLat, currLon);
   }
-  prevLat = currLat;
-  prevLon = currLon;
-  Serial << endl << "DISTANCE SINCE LAST READ   : " << distance << endl;
-  speed = distance / (millis()/1000 - lastDistanceTime);
-  Serial << "Speed: " <<  speed  << "m/s" << endl;
-  /*if(distance < DIST_THRESHOLD)  {
-    Serial << "Hey we moved "  << distance << endl;
-  }*/
+
+
+  if(distance < DIST_THRESHOLD)  {
+    Serial << endl << "DISTANCE SINCE LAST READ   : " << distance;
+    speed = distance / (millis()/1000 - lastDistanceTime);
+    Serial << "   Speed: " <<  speed  << "m/s" << endl;
+
+
+  }
+
   lastDistanceTime = millis()/1000;
   return distance;
 }

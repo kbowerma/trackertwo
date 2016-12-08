@@ -1,7 +1,7 @@
 //defines
 #define FILENAME "trackertwo.cpp"
-#define MYVERSION "0.04.233733"
-#define MYBUILD "233733BILL"
+#define MYVERSION "0.05.233733"
+#define MYBUILD "oled"
 #define PI 3.14159265
 
 #define OLED_RESET D4
@@ -30,24 +30,29 @@ Adafruit_SSD1306 display(OLED_RESET);
 int transmittingData = 1;
 // Used to keep track of the last time we published data
 long lastPublish = 0;
+long publishCounter = 0;
 // How many minutes minimum between publishes? 10+ recommended!
 int delayMinutes = 2;
+int delaySeconds = 3;
 // Threshold to trigger a publish
 // 9000 is VERY sensitive, 12000 will still detect small bumps
 int accelThreshold = 12000;
 unsigned long lastTime = 0;
 bool gpsserialdebug = true;
-bool mydebug = true;
+int mydebug = 1;
+  /* 1 - info
+     2 - just distance
+    */
 int serial1Avail = 0;
 int gpsloctime = 0;
 int DIST_THRESHOLD = 0; // Distance threshold in km for publish gps data
-float prevLat = 0.000000;
-float prevLon = 0.000000;
-float currLat = 0.000000;
-float currLon = 0.000000;
-float distance = 0.000000;
+double prevLat = 0.000000;
+double prevLon = 0.000000;
+double currLat = 0.000000;
+double currLon = 0.000000;
+double distance = 0.000000;
 int lastDistanceTime = 0;
-float speed = 0;
+double speed = 0;
 
 
 http_header_t headers[] = {
@@ -68,6 +73,7 @@ FuelGauge fuel;
 // Prototypes
  int transmitMode(String command);
  int gpsPublish(String command);
+ int fakeMove(String command);
  String generateRequestBody();
  float getDistanceFromLatLong(float lat1, float lon1, float lat2, float lon2);
  float checkDistance();
