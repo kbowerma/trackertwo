@@ -1,6 +1,6 @@
 //defines
 #define FILENAME "trackertwo.cpp"
-#define MYVERSION "0.05.233733"
+#define MYVERSION "0.05.1214"
 #define MYBUILD "oled"
 #define PI 3.14159265
 

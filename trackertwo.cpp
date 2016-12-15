@@ -38,7 +38,7 @@ void setup() {
 
     request.port = 80;
     request.hostname = "kb-dsp-server-dev.herokuapp.com";
-    request.path = "/api/v1/drones/583bde88418b863d043d08eb";
+    request.path = "/api/v1/drones/584adbcfaebc030004a68a8d";
 
     // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
@@ -50,6 +50,7 @@ void setup() {
    display.setCursor(20,20);       // 128,64 pixels
    display.clearDisplay();
    display.println("SETUP");
+   display.println(MYVERSION);
    display.display();
    delay(4000);
 }
@@ -89,7 +90,7 @@ void loop() {
          Serial  << " prevLat: " << String(prevLat) << " prevLon " <<  String(prevLon) << " currLat: " << String(currLat) << " currLon " <<  String(currLon) << " distance ";
          Serial << String(distance) << " speed " << String(speed) << endl;
          Serial << "SSID: " << String(WiFi.SSID()) << endl;
-         Serial << "HDOP: " << t.readHDOP() << "gpsTimestamp: " << getGpsTimestamp() << endl;
+         Serial << "HDOP: " << t.readHDOP() << "gpsTimestamp: " << t.getGpsTimestamp() << endl;
       }
      myoled();
      if(gpsloctime > 0 ) { // CHECK DISTANCE IF WE HAVE A LOC
@@ -104,7 +105,7 @@ void loop() {
    //debug the gps serial Note: this has to be turned on or it wont update the gps location
    while (Serial1.available() && gpsserialdebug ){
         Serial.print(char(Serial1.read()));
-        int mytime=millis()/1000;
+
     }
 
 
