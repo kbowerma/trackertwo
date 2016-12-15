@@ -9,7 +9,13 @@
 * if you are compiling on the web IDE you sould comment out this whole         *
 * include block and add:  AssetTracker, Steaming, and HTTPClient using the web *
 * IDE
-*/
+*  TODO:
+*  [ ] make sitance threshold configurable via function
+*  [ ] make move function take in full float
+*  [ ] Display speed for 5 seconds
+*  [ ] Change Previous location to a last sent location, that way I dont have to worry about micro moves
+
+ */
 #include "application.h"
  #include"lib/AssetTracker/firmware/AssetTracker.h"
  #include"lib/streaming/firmware/spark-streaming.h"
