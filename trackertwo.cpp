@@ -22,7 +22,7 @@
  #include "lib/HttpClient/firmware/HttpClient.h"
  #include "lib/SparkJson/firmware/SparkJson.h"
  #include "lib/Adafruit_SSD1306/Adafruit_SSD1306.h"
- #include "bobcat.h"
+ #include "trackertwo.h"
 
 
 void setup() {
@@ -48,7 +48,7 @@ void setup() {
     Particle.variable("lstDistTime", lastDistanceTime);
     Particle.variable("speed", speed);
 
-    String thisDeviceName = "bobcat_hunter";
+
 
 
     pinMode(D7, OUTPUT);
@@ -68,7 +68,7 @@ void setup() {
    display.setCursor(20,20);       // 128,64 pixels
    display.clearDisplay();
    display.println(MYBUILD);
-   display.println(thisDeviceName);
+   display.println(MYBUILD);
    display.display();
    delay(4000);
 }

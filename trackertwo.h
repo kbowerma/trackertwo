@@ -1,8 +1,10 @@
 //defines
 #define FILENAME "trackertwo.cpp"
-#define MYVERSION "0.06.1214"
-#define MYBUILD "oled"
+#define MYVERSION "0.06.1222"
+#define MYBUILD "Trackertwo"
 #define PI 3.14159265
+#define DSPPATH "/api/v1/drones/584ad9afaebc030004a68a8c"
+
 
 #define OLED_RESET D4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -31,6 +33,7 @@ int transmittingData = 1;
 // Used to keep track of the last time we published data
 long lastPublish = 0;
 long publishCounter = 0;
+double pubRate = 0;
 // How many minutes minimum between publishes? 10+ recommended!
 int delayMinutes = 1;
 int delaySeconds = 3;
@@ -45,7 +48,7 @@ int mydebug = 1;
     */
 int serial1Avail = 0;
 int gpsloctime = 0;
-int DIST_THRESHOLD = 0.0001; // Distance threshold in km for publish gps data .0001= 11meters,  .00001 is 1.1 meters
+double DIST_THRESHOLD = 0.0001; // Distance threshold in km for publish gps data .0001= 11meters,  .00001 is 1.1 meters
 double prevLat = 0.000000;
 double prevLon = 0.000000;
 double currLat = 0.000000;
