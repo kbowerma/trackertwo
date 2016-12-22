@@ -1,6 +1,6 @@
 //defines
 #define FILENAME "trackertwo.cpp"
-#define MYVERSION "0.05.1214"
+#define MYVERSION "0.06.1214"
 #define MYBUILD "oled"
 #define PI 3.14159265
 
@@ -32,7 +32,7 @@ int transmittingData = 1;
 long lastPublish = 0;
 long publishCounter = 0;
 // How many minutes minimum between publishes? 10+ recommended!
-int delayMinutes = 2;
+int delayMinutes = 1;
 int delaySeconds = 3;
 // Threshold to trigger a publish
 // 9000 is VERY sensitive, 12000 will still detect small bumps
@@ -45,11 +45,13 @@ int mydebug = 1;
     */
 int serial1Avail = 0;
 int gpsloctime = 0;
-int DIST_THRESHOLD = 0; // Distance threshold in km for publish gps data
+int DIST_THRESHOLD = 0.0001; // Distance threshold in km for publish gps data .0001= 11meters,  .00001 is 1.1 meters
 double prevLat = 0.000000;
 double prevLon = 0.000000;
 double currLat = 0.000000;
 double currLon = 0.000000;
+double pubdLat = 0.000000;
+double pubdLon = 0.000000;
 double distance = 0.000000;
 int lastDistanceTime = 0;
 double speed = 0;

@@ -25,7 +25,6 @@
  #include "trackertwo.h"
 
 
-
 void setup() {
     t.begin();
     t.gpsOn();
@@ -44,7 +43,7 @@ void setup() {
 
     request.port = 80;
     request.hostname = "kb-dsp-server-dev.herokuapp.com";
-    request.path = "/api/v1/drones/584adbcfaebc030004a68a8d";
+    request.path = "/api/v1/drones/584ad9afaebc030004a68a8c";
 
     // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
@@ -93,7 +92,7 @@ void loop() {
     if(millis()%(delaySeconds*1000) == 0  ) {
       if(mydebug < 2 ) {
          Serial << endl << MYBUILD << " " << millis()/1000 << "  GPS FIX TIME: " << gpsloctime  << "  " << t.readLatLon();
-         Serial  << " prevLat: " << String(prevLat) << " prevLon " <<  String(prevLon) << " currLat: " << String(currLat) << " currLon " <<  String(currLon) << " distance ";
+         Serial  << " pubdLat: " << String(pubdLat) << " pubdLon " <<  String(pubdLon) << " currLat: " << String(currLat) << " currLon " <<  String(currLon) << " distance ";
          Serial << String(distance) << " speed " << String(speed) << endl;
          Serial << "SSID: " << String(WiFi.SSID()) << endl;
          Serial << "HDOP: " << t.readHDOP() << "gpsTimestamp: " << t.getGpsTimestamp() << endl;
@@ -108,6 +107,8 @@ void loop() {
 
 
 
+
+
    //debug the gps serial Note: this has to be turned on or it wont update the gps location
    while (Serial1.available() && gpsserialdebug ){
         Serial.print(char(Serial1.read()));
@@ -117,7 +118,7 @@ void loop() {
 
   //------------- debug thoughts -------------------- //
 
-
+  /*  dont do this debug thoughts now
 
   if (currLat != prevLat  ) {
     publishCounter = publishCounter+1;  //TODO Move this to actaul published
@@ -136,13 +137,33 @@ void loop() {
     //delay(6000);
   }
 
+  */
   //------------- end debug thoughts -------------------- //
+
+  if (currLat != pubdLat || currLon != pubdLon)  { // movement from last pubbed
+    if ( checkDistance() > DIST_THRESHOLD ) {  //we have movment but we dont know if it is enough
+        Serial << " We have movement d="  <<  distance << endl;
+        if (currLat != pubdLat  ) {
+          Serial << "currlat: " << currLat <<  "pubdLat: " << pubdLat  << endl;
+        }
+        if (currLon != pubdLon ) {
+          Serial << "currLon: " << currLon <<  "pubdLon: " << pubdLon  << endl;
+        }
+
+      publishCounter = publishCounter+1;
+      gpsPublish("1");
+      pubdLat= currLat;
+      pubdLon = currLon;
+      myoled();
+
+    }
+  }
 
     //lastly set old to current as long as you get areading
     //if(currLat > 0 )
-    prevLat = currLat;
+//    prevLat = currLat;
     //if(currLon > 0 )
-    prevLon = currLon;
+//    prevLon = currLon;
 
 }
 
@@ -248,22 +269,15 @@ float getDistanceFromLatLong(float lat1, float lon1, float lat2, float lon2) {
 }
 // checkDistance
 float checkDistance() {
-
-
-  if(prevLat > 0 ) {
+  if(currLat > 0 ) {
     // only check the distance is we have previous distance
-    distance = getDistanceFromLatLong(prevLat, prevLon, currLat, currLon);
+    distance = getDistanceFromLatLong(pubdLat, pubdLon, currLat, currLon);
   }
-
-
   if(distance < DIST_THRESHOLD)  {
-    Serial << endl << "DISTANCE SINCE LAST READ   : " << distance;
+    Serial << endl << "DISTANCE over threshold   : " << distance;
     speed = distance / (millis()/1000 - lastDistanceTime);
     Serial << "   Speed: " <<  speed  << "m/s" << endl;
-
-
   }
-
   lastDistanceTime = millis()/1000;
   return distance;
 }
