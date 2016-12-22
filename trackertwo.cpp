@@ -22,7 +22,7 @@
  #include "lib/HttpClient/firmware/HttpClient.h"
  #include "lib/SparkJson/firmware/SparkJson.h"
  #include "lib/Adafruit_SSD1306/Adafruit_SSD1306.h"
- #include "trackertwo.h"
+ #include "bobcat.h"
 
 
 void setup() {
@@ -36,6 +36,19 @@ void setup() {
     Particle.function("tmode", transmitMode);
     Particle.function("gps", gpsPublish);
     Particle.function("move", fakeMove);
+    Particle.variable("currLat", currLat);
+    Particle.variable("currLon", currLon);
+    Particle.variable("debugLevel", mydebug);
+    Particle.variable("lastPublish", lastPublish);
+    Particle.variable("pubdCounter", publishCounter);
+    Particle.variable("pubdRate", pubRate );
+    Particle.variable("gpsloctime", gpsloctime);
+    Particle.variable("DIST_THRESHO", DIST_THRESHOLD);
+    Particle.variable("distance", distance);
+    Particle.variable("lstDistTime", lastDistanceTime);
+    Particle.variable("speed", speed);
+
+    String thisDeviceName = "bobcat_hunter";
 
 
     pinMode(D7, OUTPUT);
@@ -43,7 +56,7 @@ void setup() {
 
     request.port = 80;
     request.hostname = "kb-dsp-server-dev.herokuapp.com";
-    request.path = "/api/v1/drones/584ad9afaebc030004a68a8c";
+    request.path = DSPPATH;
 
     // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
@@ -54,8 +67,8 @@ void setup() {
    display.setTextColor(WHITE, BLACK); // 'normal' text
    display.setCursor(20,20);       // 128,64 pixels
    display.clearDisplay();
-   display.println("SETUP");
-   display.println(MYVERSION);
+   display.println(MYBUILD);
+   display.println(thisDeviceName);
    display.display();
    delay(4000);
 }
@@ -151,6 +164,7 @@ void loop() {
         }
 
       publishCounter = publishCounter+1;
+      pubRate = publishCounter *60000 / millis();
       gpsPublish("1");
       pubdLat= currLat;
       pubdLon = currLon;
