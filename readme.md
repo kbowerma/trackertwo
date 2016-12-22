@@ -19,20 +19,32 @@ you should comment out this whole include block and add: AssetTracker, Steaming,
 
 ## Photon wiring
 
-Photon pin | GPS Pin |Photon pin | GPS Pin
+Photon pin |Device | Device  Pin
 ----| ------- | ----| -------
-VIN| - | 3v3 | VIN
-GND| - | RST | -
-Tx| Rx | VBAT | -
-Rx| Tx | GND | -
-WKP| - | D7 | -
-DAC| - | D6 | -
-A5| - | D5 | -
-A4| - | D4 | -
-A3| - | D3 | -
-A2| - | D2 | -
-A1| - | D1 | -
-A0| - | D0 | -
+VIN| - |
+GND| - |
+Tx| GPS | Rx
+Rx| GPS | Tx
+WKP| - |
+DAC| - |
+A5| - |
+A4| - |
+A3| - |
+A2| - |
+A1| - |
+A0| - |
+3v3 | OLED/GPS | VIN
+RST | -
+VBAT | -
+GND | OLED/GPS |gnd
+D7 | -
+D6 | -
+D5 | -
+D4 | -
+D3 | -
+D2 | -
+D1 | OLED | SCL
+D0 | OLED | SDA
 
 ## Electron wiring
 
