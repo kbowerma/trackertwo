@@ -29,10 +29,10 @@ int transmittingData = 1;
 // Used to keep track of the last time we published data
 long lastPublish = 0;
 long publishCounter = 0;
-double pubRate = 0;
+
 // How many minutes minimum between publishes? 10+ recommended!
 int delayMinutes = 1;
-int delaySeconds = 1;
+int delaySeconds = 2;
 // Threshold to trigger a publish
 // 9000 is VERY sensitive, 12000 will still detect small bumps
 int accelThreshold = 12000;
@@ -44,7 +44,7 @@ int mydebug = 1;
     */
 int serial1Avail = 0;
 int gpsloctime = 0;
-double minDelta = 1.0; // Distance threshold in m for publish gps data .0001= 11meters,  .00001 is 1.1 meters
+double minDelta = 15.0; // Distance threshold in m for publish gps data .0001= 11meters,  .00001 is 1.1 meters
 double maxDelta = 50000; // (50km) and amount that tells us it is too much, we must have gotten a bad read
 double startLat = 0.000000;
 double startLon = 0.000000;
@@ -52,12 +52,16 @@ double currLat = 0.000000;
 double currLon = 0.000000;
 double pubdLat = 0.000000;
 double pubdLon = 0.000000;
+double oldLat = 0.000000;
+double oldLon = 0.000000;
+int staleness = 0;
 double distance = 0.000000;
 //double totDistance = 0.000000;
 double hdop = 0.00;
 int lastDistanceTime = 0;
 double speed = 0;
 bool readyToPub = false;
+String ssid;
 
 
 http_header_t headers[] = {
@@ -69,6 +73,7 @@ http_response_t response;
 
 // Creating an AssetTracker named 't' for us to reference
 AssetTracker t = AssetTracker();
+
 
  HttpClient http;
 

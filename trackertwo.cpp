@@ -28,28 +28,30 @@
 void setup() {
     t.begin();
     t.gpsOn();
-    // Opens up a Serial port so you can listen over USB
+
     Serial.begin(9600);
 
     Particle.function("tmode", transmitMode);
     Particle.function("gps", gpsPublish);
     Particle.variable("currLat", currLat);
     Particle.variable("currLon", currLon);
-    Particle.variable("startLat",startLat);
     Particle.variable("pubdLon",startLon);
     Particle.variable("pubdLat",startLat);
+    Particle.variable("startLat",startLat);
     Particle.variable("startLon",startLon);
     Particle.variable("debugLevel", mydebug);
     Particle.variable("lastPublish", lastPublish);
     Particle.variable("pubdCounter", publishCounter);
-    Particle.variable("pubdRate", pubRate );
     Particle.variable("gpsloctime", gpsloctime);
     Particle.variable("minDelta", minDelta);
     Particle.variable("maxDelta", maxDelta);
     Particle.variable("distance", distance);
     Particle.variable("lstDistTime", lastDistanceTime);
-    Particle.variable("speed", speed);
+    Particle.variable("stalness", staleness);
     Particle.variable("hdop", hdop);
+    Particle.variable("ssid",ssid);
+
+    String ssid = String(WiFi.SSID());
 
     Particle.variable("readyToPub", readyToPub);
 
@@ -75,11 +77,16 @@ void loop() {
     // You'll need to run this every loop to capture the GPS output
   t.updateGPS();
 
+  oldLat=currLat; //previous Lat
+  oldLon=currLon; // previous Lon
   currLat = t.readLatDeg();
   currLon = t.readLonDeg();
+  if ( oldLat==currLat && oldLon==currLon ) {
+     staleness++; //stroke th stalness if nothing changes
+   } else { staleness = 0; }
   hdop = t.readHDOP();
 
-    //FIRST GPS LOC
+  //FIRST GPS LOC
   if(t.gpsFix() && gpsloctime == 0 ) {
     gpsloctime = millis()/1000;
     digitalWrite(D7, LOW);
@@ -96,41 +103,22 @@ void loop() {
 
   if( !t.gpsFix() ) readyToPub = false;  // make note ready if we loose the gpsFix
 
-  /*
-     // 2 minutes - BELT JOB
-      //if the current time - the last time we published is greater than your set delay...
-      if(millis()-lastPublish > delayMinutes*60*1000){
-          lastPublish = millis();  // Remember when we published
-          Serial << millis()/1000 << "  ";  //prints uptime in seconds
-          Serial.println(t.preNMEA()); // Dumps the full NMEA sentence to serial in case you're curious
-          // GPS requires a "fix" on the satellites to give good data,
-            // so we should only publish data if there's a fix
-          if(t.gpsFix()){ // Only publish if we're in transmittingData mode 1;
-              if(transmittingData){
-                  gpsPublish("1");  // call the gpsPublish Function
-              }
-              digitalWrite(D7, LOW);   // turn off the led on the fix
-          }
-      }
-  */
-    // 1 seconds debug logger
-    if(millis()%(delaySeconds*1000) == 0  ) {
-      if(mydebug < 2 ) {
-         Serial << endl << MYBUILD << " " << millis()/1000 << "  GPS FIX TIME: " << gpsloctime  << "  " << t.readLatLon();
-         Serial  << " pubdLat: " << String(pubdLat) << " pubdLon " <<  String(pubdLon) << " currLat: " << String(currLat) << " currLon " <<  String(currLon) << " distance ";
-         Serial << String(distance) << " speed " << String(speed) << endl;
-         Serial << "SSID: " << String(WiFi.SSID()) << endl;
-         Serial << "HDOP: " << t.readHDOP() << "gpsTimestamp: " << t.getGpsTimestamp() << endl;
-      }
-     myoled();
-     if(gpsloctime > 0 ) { // CHECK DISTANCE IF WE HAVE A LOC
-       display << "dist " << checkDistance() << endl;  // this check distance call will call the pbulish too
-       display << MYBUILD << endl;
-      }// only call
-     display.display();
+  /*  2 second belt */
+  if(millis()%(delaySeconds*1000) == 0  ) {
+    if(mydebug < 2 ) {
+       Serial << endl << MYBUILD << " " << millis()/1000 << "  GPS FIX TIME: " << gpsloctime  << "  " << t.readLatLon();
+       Serial  << " pubdLat: " << String(pubdLat) << " pubdLon " <<  String(pubdLon) << " currLat: " << String(currLat) << " currLon " <<  String(currLon) << " distance ";
+       //Serial << String(distance) << " speed " << String(speed) << endl;
+       //Serial << "SSID: " << String(WiFi.SSID()) << endl;
+       //Serial << "HDOP: " << t.readHDOP() << "gpsTimestamp: " << t.getGpsTimestamp() << endl;
     }
-
-
+   myoled();
+   if(gpsloctime > 0 ) { // CHECK DISTANCE IF WE HAVE A LOC
+     display << "dist " << checkDistance() << endl;  // this check distance call will call the pbulish too
+     display << MYBUILD << endl;
+    }// only call
+   display.display();
+  }
 
    while (Serial1.available()  ){
         Serial.print(char(Serial1.read()));
@@ -148,7 +136,7 @@ void myoled() {
     int seconds =  ( millis()/1000 ) % 60;
     int minutes = ( millis()/(1000 * 60) ) % 60;
     int hours  = ( millis()/(1000 * 60 * 60) ) % 24;
-   display << hours << ":" << minutes<< ":" << seconds << " pud " << publishCounter << endl ;
+   display << hours << ":" << minutes<< ":" << seconds << " pud " << publishCounter << " st: " << staleness << endl ;
 
    if (gpsloctime > 0 ) {
     display  <<  String(currLat)  << endl;
@@ -170,23 +158,16 @@ int transmitMode(String command){
  */
 int gpsPublish(String command){
     if(t.gpsFix()){
-        // WE HAVE MOVEMENT
         if ( command == "1"  ) {
         request.body = generateRequestBody();
         http.put(request, response, headers);
         Serial << "Fnc call: http body: " << request.body << endl;
-
-      //  Particle.publish("G", t.readLatLon(), 60, PRIVATE);
-      //  Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
-      //  Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
         }
-
         return 1;
     }
     else { return 0; }
 }
 //Function to assembly JSON body payload
-
 String generateRequestBody() {
 
      // A Dynamic Json buffer
@@ -194,10 +175,10 @@ String generateRequestBody() {
      JsonObject& obj = jsonBuffer.createObject();
      char buf[500];
      JsonVariant lat;
-     lat.set(t.readLatDeg(), 6);
+     lat.set(currLat, 6);
      obj["lat"] = lat;
      JsonVariant lng;
-     lng.set(t.readLonDeg(), 6);
+     lng.set(currLon, 6);
      obj["lng"] = lng;
      obj.printTo(buf, sizeof(buf));
        return String(buf);
@@ -233,9 +214,7 @@ float checkDistance() {
       gpsPublish("1");
 
       lastDistanceTime = millis()/1000;
-      //Particle.publish("cd-old", String(String(currLat) + "," + String(currLon)), 60, PRIVATE);
       Particle.publish("DELTA", String("delta  " + String(distance) + " : " + String(currLat) + "," + String(currLat) +" | "+ String(pubdLat) + "," + String(pubdLat)), 60, PRIVATE);
-      //Particle.publish("cd-delta", String(distance), 60, PRIVATE);
       pubdLon = currLon;
       pubdLat = currLat;
       publishCounter++;
