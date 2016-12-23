@@ -44,7 +44,8 @@ void setup() {
     Particle.variable("pubdCounter", publishCounter);
     Particle.variable("pubdRate", pubRate );
     Particle.variable("gpsloctime", gpsloctime);
-    Particle.variable("DIST_THRESHO", DIST_THRESHOLD);
+    Particle.variable("minDelta", minDelta);
+    Particle.variable("maxDelta", maxDelta);
     Particle.variable("distance", distance);
     Particle.variable("lstDistTime", lastDistanceTime);
     Particle.variable("speed", speed);
@@ -95,24 +96,24 @@ void loop() {
 
   if( !t.gpsFix() ) readyToPub = false;  // make note ready if we loose the gpsFix
 
-/*
-   // 2 minutes - BELT JOB
-    //if the current time - the last time we published is greater than your set delay...
-    if(millis()-lastPublish > delayMinutes*60*1000){
-        lastPublish = millis();  // Remember when we published
-        Serial << millis()/1000 << "  ";  //prints uptime in seconds
-        Serial.println(t.preNMEA()); // Dumps the full NMEA sentence to serial in case you're curious
-        // GPS requires a "fix" on the satellites to give good data,
-          // so we should only publish data if there's a fix
-        if(t.gpsFix()){ // Only publish if we're in transmittingData mode 1;
-            if(transmittingData){
-                gpsPublish("1");  // call the gpsPublish Function
-            }
-            digitalWrite(D7, LOW);   // turn off the led on the fix
-        }
-    }
-*/
-    // 5 seconds debug logger
+  /*
+     // 2 minutes - BELT JOB
+      //if the current time - the last time we published is greater than your set delay...
+      if(millis()-lastPublish > delayMinutes*60*1000){
+          lastPublish = millis();  // Remember when we published
+          Serial << millis()/1000 << "  ";  //prints uptime in seconds
+          Serial.println(t.preNMEA()); // Dumps the full NMEA sentence to serial in case you're curious
+          // GPS requires a "fix" on the satellites to give good data,
+            // so we should only publish data if there's a fix
+          if(t.gpsFix()){ // Only publish if we're in transmittingData mode 1;
+              if(transmittingData){
+                  gpsPublish("1");  // call the gpsPublish Function
+              }
+              digitalWrite(D7, LOW);   // turn off the led on the fix
+          }
+      }
+  */
+    // 1 seconds debug logger
     if(millis()%(delaySeconds*1000) == 0  ) {
       if(mydebug < 2 ) {
          Serial << endl << MYBUILD << " " << millis()/1000 << "  GPS FIX TIME: " << gpsloctime  << "  " << t.readLatLon();
@@ -123,7 +124,7 @@ void loop() {
       }
      myoled();
      if(gpsloctime > 0 ) { // CHECK DISTANCE IF WE HAVE A LOC
-       display << "dist " << checkDistance() << endl;
+       display << "dist " << checkDistance() << endl;  // this check distance call will call the pbulish too
        display << MYBUILD << endl;
       }// only call
      display.display();
@@ -175,9 +176,9 @@ int gpsPublish(String command){
         http.put(request, response, headers);
         Serial << "Fnc call: http body: " << request.body << endl;
 
-        Particle.publish("G", t.readLatLon(), 60, PRIVATE);
-        Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
-        Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
+      //  Particle.publish("G", t.readLatLon(), 60, PRIVATE);
+      //  Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
+      //  Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
         }
 
         return 1;
@@ -223,14 +224,24 @@ float getDistanceFromLatLong(float lat1, float lon1, float lat2, float lon2) {
 float checkDistance() {
   if(currLat > 0 ) { // only check the distance is we have previous distance
     distance = getDistanceFromLatLong(pubdLat, pubdLon, currLat, currLon) * 1000 ;
-
   }
-  if(distance < DIST_THRESHOLD)  {
+  if(distance > minDelta && distance < maxDelta)  {
     Serial << endl << "DISTANCE over threshold   : " << distance;
     speed = distance / (millis()/1000 - lastDistanceTime);
     Serial << "   Speed: " <<  speed  << "m/s" << endl;
-  //  totDistance = getDistanceFromLatLong(startLat, startLon, currLat, currLon) * 1000 ;
+    // BEGIN PUBLISH SEQUENCE
+      gpsPublish("1");
+
+      lastDistanceTime = millis()/1000;
+      //Particle.publish("cd-old", String(String(currLat) + "," + String(currLon)), 60, PRIVATE);
+      Particle.publish("DELTA", String("delta  " + String(distance) + " : " + String(currLat) + "," + String(currLat) +" | "+ String(pubdLat) + "," + String(pubdLat)), 60, PRIVATE);
+      //Particle.publish("cd-delta", String(distance), 60, PRIVATE);
+      pubdLon = currLon;
+      pubdLat = currLat;
+      publishCounter++;
+      delay(500);  // make a little hold down
+    // END PUBLISH SEQUENCE
+
   }
-  lastDistanceTime = millis()/1000;
   return distance;
 }

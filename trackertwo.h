@@ -44,7 +44,8 @@ int mydebug = 1;
     */
 int serial1Avail = 0;
 int gpsloctime = 0;
-double DIST_THRESHOLD = 1.0; // Distance threshold in m for publish gps data .0001= 11meters,  .00001 is 1.1 meters
+double minDelta = 1.0; // Distance threshold in m for publish gps data .0001= 11meters,  .00001 is 1.1 meters
+double maxDelta = 50000; // (50km) and amount that tells us it is too much, we must have gotten a bad read
 double startLat = 0.000000;
 double startLon = 0.000000;
 double currLat = 0.000000;
@@ -52,7 +53,7 @@ double currLon = 0.000000;
 double pubdLat = 0.000000;
 double pubdLon = 0.000000;
 double distance = 0.000000;
-double totDistance = 0.000000;
+//double totDistance = 0.000000;
 double hdop = 0.00;
 int lastDistanceTime = 0;
 double speed = 0;
