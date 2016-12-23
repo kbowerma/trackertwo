@@ -30,14 +30,15 @@ void setup() {
     t.gpsOn();
     // Opens up a Serial port so you can listen over USB
     Serial.begin(9600);
-    // Serial1.begin(9600);  //NOTE:   it looks like I dont need this anymore
 
-    // These three functions are useful for remote diagnostics. Read more below.
     Particle.function("tmode", transmitMode);
     Particle.function("gps", gpsPublish);
-    Particle.function("move", fakeMove);
     Particle.variable("currLat", currLat);
     Particle.variable("currLon", currLon);
+    Particle.variable("startLat",startLat);
+    Particle.variable("pubdLon",startLon);
+    Particle.variable("pubdLat",startLat);
+    Particle.variable("startLon",startLon);
     Particle.variable("debugLevel", mydebug);
     Particle.variable("lastPublish", lastPublish);
     Particle.variable("pubdCounter", publishCounter);
@@ -47,9 +48,9 @@ void setup() {
     Particle.variable("distance", distance);
     Particle.variable("lstDistTime", lastDistanceTime);
     Particle.variable("speed", speed);
+    Particle.variable("hdop", hdop);
 
-
-
+    Particle.variable("readyToPub", readyToPub);
 
     pinMode(D7, OUTPUT);
     digitalWrite(D7, HIGH);  //turn on built in led
@@ -58,11 +59,8 @@ void setup() {
     request.hostname = "kb-dsp-server-dev.herokuapp.com";
     request.path = DSPPATH;
 
-    // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
-
    display.clearDisplay();   // clears the screen and buffer
-
    display.setTextSize(2);           // from 1-9 sensible actually can be bigger but useless
    display.setTextColor(WHITE, BLACK); // 'normal' text
    display.setCursor(20,20);       // 128,64 pixels
@@ -74,17 +72,30 @@ void setup() {
 }
 void loop() {
     // You'll need to run this every loop to capture the GPS output
-    t.updateGPS();
+  t.updateGPS();
 
-    currLat = t.readLatDeg();
-    currLon = t.readLonDeg();
+  currLat = t.readLatDeg();
+  currLon = t.readLonDeg();
+  hdop = t.readHDOP();
 
     //FIRST GPS LOC
-    if(t.gpsFix() && gpsloctime == 0 ) {
-      gpsloctime = millis()/1000;
-      digitalWrite(D7, LOW);
-    }
+  if(t.gpsFix() && gpsloctime == 0 ) {
+    gpsloctime = millis()/1000;
+    digitalWrite(D7, LOW);
+  }
 
+    //FIRST PUB Logic
+  if (pubdLat == 0.0 && pubdLon == 0.0 && currLat != 0.0 && currLon ) {
+    pubdLat = currLat;
+    pubdLon = currLon;
+    startLat = currLat;
+    startLon = currLon;
+    readyToPub = true;
+  }
+
+  if( !t.gpsFix() ) readyToPub = false;  // make note ready if we loose the gpsFix
+
+/*
    // 2 minutes - BELT JOB
     //if the current time - the last time we published is greater than your set delay...
     if(millis()-lastPublish > delayMinutes*60*1000){
@@ -100,7 +111,7 @@ void loop() {
             digitalWrite(D7, LOW);   // turn off the led on the fix
         }
     }
-
+*/
     // 5 seconds debug logger
     if(millis()%(delaySeconds*1000) == 0  ) {
       if(mydebug < 2 ) {
@@ -120,108 +131,44 @@ void loop() {
 
 
 
-
-
-   //debug the gps serial Note: this has to be turned on or it wont update the gps location
-   while (Serial1.available() && gpsserialdebug ){
+   while (Serial1.available()  ){
         Serial.print(char(Serial1.read()));
 
     }
-
-
-  //------------- debug thoughts -------------------- //
-
-  /*  dont do this debug thoughts now
-
-  if (currLat != prevLat  ) {
-    publishCounter = publishCounter+1;  //TODO Move this to actaul published
-    Serial << "precheckdistance A" << String(prevLat) << "  " <<  String(prevLon) << " " << String(currLat) << "  " <<  String(currLon) << "  " << String(distance) << endl;
-    checkDistance();
-    Serial << endl << endl << "THERE IS A CHANGE in LAT,  deltaLon "  <<  currLat - prevLat << " distance: " << distance << endl;
-
-    //delay(6000);
-  }
-
-  if (currLon != prevLon  ) {
-    publishCounter = publishCounter+1;  //TODO Move this to actaul published
-    Serial << "precheckdistance  B" << String(prevLat) << "  " <<  String(prevLon) << " " << String(currLat) << "  " <<  String(currLon) << "  " << String(distance) << endl;
-    checkDistance();
-    Serial << endl << endl << "THERE IS A CHANGE in LON, deltaLon "  <<  currLon - prevLon << " distance: " << distance << endl;
-    //delay(6000);
-  }
-
-  */
-  //------------- end debug thoughts -------------------- //
-
-  if (currLat != pubdLat || currLon != pubdLon)  { // movement from last pubbed
-    if ( checkDistance() > DIST_THRESHOLD ) {  //we have movment but we dont know if it is enough
-        Serial << " We have movement d="  <<  distance << endl;
-        if (currLat != pubdLat  ) {
-          Serial << "currlat: " << currLat <<  "pubdLat: " << pubdLat  << endl;
-        }
-        if (currLon != pubdLon ) {
-          Serial << "currLon: " << currLon <<  "pubdLon: " << pubdLon  << endl;
-        }
-
-      publishCounter = publishCounter+1;
-      pubRate = publishCounter *60000 / millis();
-      gpsPublish("1");
-      pubdLat= currLat;
-      pubdLon = currLon;
-      myoled();
-
-    }
-  }
-
-    //lastly set old to current as long as you get areading
-    //if(currLat > 0 )
-//    prevLat = currLat;
-    //if(currLon > 0 )
-//    prevLon = currLon;
-
 }
 
-
+// *********** functions *****************
 // runs the oled functions
 void myoled() {
   display.setTextSize(1);
   display.clearDisplay();
   display.setCursor(0,0);
- // display.clearDisplay();
-  //display.print("SSID:");
-   //display.setCursor(30,0);
   display << gpsloctime <<"  "  << (String(WiFi.SSID()))  << " " << t.readHDOP() << endl;
     int seconds =  ( millis()/1000 ) % 60;
     int minutes = ( millis()/(1000 * 60) ) % 60;
     int hours  = ( millis()/(1000 * 60 * 60) ) % 24;
    display << hours << ":" << minutes<< ":" << seconds << " pud " << publishCounter << endl ;
-  // display << "GPS: "  << gpsloctime << endl;
+
    if (gpsloctime > 0 ) {
-    //display.setCursor(0,25);
     display  <<  String(currLat)  << endl;
     display  << String(currLon) << endl;
   }
 
   display.display();
 }
-// Allows you to remotely change whether a device is publishing to the cloud
-  // or is only reporting data over Serial. Saves data when using only Serial!
-  // Change the default at the top of the code.
+ /* Allows you to remotely change whether a device is publishing to the cloud
+   or is only reporting data over Serial. Saves data when using only Serial!
+   Change the default at the top of the code.
+ */
 int transmitMode(String command){
     transmittingData = atoi(command);
     return 1;
 }
-// Actively ask for a GPS reading if you're impatient. Only publishes if there's
- // a GPS fix, otherwise returns '0'
+ /* Actively ask for a GPS reading if you're impatient. Only publishes if there's
+  a GPS fix, otherwise returns '0'
+ */
 int gpsPublish(String command){
     if(t.gpsFix()){
-
-        //static float prevLat, prevLon; // Store previous values of latitude and longitude
-        //float mydistance = checkDistance();
-
-
-        // Serial << " calling checkDistance() distance: "  << mydistance << endl;
-
         // WE HAVE MOVEMENT
         if ( command == "1"  ) {
         request.body = generateRequestBody();
@@ -231,23 +178,14 @@ int gpsPublish(String command){
         Particle.publish("G", t.readLatLon(), 60, PRIVATE);
         Particle.publish("GLAT", String(t.readLatDeg()), 60, PRIVATE);
         Particle.publish("GLON", String(t.readLonDeg()), 60, PRIVATE);
-        //Particle.publish("Dist", String(mydistance), 60, PRIVATE);
-
         }
 
-        // uncomment next line if you want a manual publish to reset delay counter
-        // lastPublish = millis();
         return 1;
     }
     else { return 0; }
 }
 //Function to assembly JSON body payload
-int fakeMove(String command){
-  int n = atof(command);
-  prevLon = prevLon + n;
-  return 1;
 
-}
 String generateRequestBody() {
 
      // A Dynamic Json buffer
@@ -283,14 +221,15 @@ float getDistanceFromLatLong(float lat1, float lon1, float lat2, float lon2) {
 }
 // checkDistance
 float checkDistance() {
-  if(currLat > 0 ) {
-    // only check the distance is we have previous distance
-    distance = getDistanceFromLatLong(pubdLat, pubdLon, currLat, currLon);
+  if(currLat > 0 ) { // only check the distance is we have previous distance
+    distance = getDistanceFromLatLong(pubdLat, pubdLon, currLat, currLon) * 1000 ;
+
   }
   if(distance < DIST_THRESHOLD)  {
     Serial << endl << "DISTANCE over threshold   : " << distance;
     speed = distance / (millis()/1000 - lastDistanceTime);
     Serial << "   Speed: " <<  speed  << "m/s" << endl;
+  //  totDistance = getDistanceFromLatLong(startLat, startLon, currLat, currLon) * 1000 ;
   }
   lastDistanceTime = millis()/1000;
   return distance;
