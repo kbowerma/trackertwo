@@ -136,7 +136,7 @@ void myoled() {
     int seconds =  ( millis()/1000 ) % 60;
     int minutes = ( millis()/(1000 * 60) ) % 60;
     int hours  = ( millis()/(1000 * 60 * 60) ) % 24;
-   display << hours << ":" << minutes<< ":" << seconds << " pud " << publishCounter << " st: " << staleness << endl ;
+   display << hours << ":" << minutes<< ":" << seconds << "|" << publishCounter << "|" << staleness << endl ;
 
    if (gpsloctime > 0 ) {
     display  <<  String(currLat)  << endl;
