@@ -3,6 +3,7 @@
 #define MYVERSION "0.07.1227"
 #define MYBUILD "regal"
 #define PI 3.14159265
+// regal-air 58629f8a01a1100004e8d83d
 #define DSPPATH "/api/v1/drones/58629f8a01a1100004e8d83d"
 
 #define OLED_RESET D4
