@@ -1,9 +1,10 @@
 //defines
 #define FILENAME "trackertwo.cpp"
-#define MYVERSION "0.07.1222"
-#define MYBUILD "ham"
+#define MYVERSION "0.07.1227"
+#define MYBUILD "trackertwo"
 #define PI 3.14159265
-#define DSPPATH "/api/v1/drones/584ad9afaebc030004a68a8c"
+// trackertwo = 584adbcfaebc030004a68a8d
+#define DSPPATH "/api/v1/drones/584adbcfaebc030004a68a8d"
 
 #define OLED_RESET D4
 Adafruit_SSD1306 display(OLED_RESET);
