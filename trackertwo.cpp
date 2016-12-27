@@ -22,7 +22,7 @@
  #include "lib/HttpClient/firmware/HttpClient.h"
  #include "lib/SparkJson/firmware/SparkJson.h"
  #include "lib/Adafruit_SSD1306/Adafruit_SSD1306.h"
- #include "regal.h"
+ #include "bobcat.h"
 
 
 void setup() {
