@@ -3,6 +3,7 @@
 #define MYVERSION "0.07.1227"
 #define MYBUILD "bobcat"
 #define PI 3.14159265
+// bobcat = 585c05f7fe76420004a44a0b
 #define DSPPATH "/api/v1/drones/585c05f7fe76420004a44a0b"
 
 #define OLED_RESET D4
